@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicsfall意见箱</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --dark: #1d3557;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #d1e0fd 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        .logo {
+            display: inline-block;
+            background: var(--primary);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        h1 {
+            color: var(--dark);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--warning));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 50px;
+            padding: 5px;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 12px 30px;
+            cursor: pointer;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--gray);
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card {
+            background: var(--card-gradient);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(67, 97, 238, 0.1);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            color: var(--dark);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(67, 97, 238, 0.1);
+        }
+        
+        .card-title i {
+            margin-right: 12px;
+            color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
+        }
+        
+        textarea {
+            min-height: 160px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn i {
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: rgba(255, 193, 7, 0.15);
+            color: #d4a200;
+        }
+        
+        .status-approved {
+            background: rgba(40, 167, 69, 0.15);
+            color: #1e7e34;
+        }
+        
+        .status-rejected {
+            background: rgba(220, 53, 69, 0.15);
+            color: #bd2130;
+        }
+        
+        .query-result {
+            text-align: left;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 25px;
+            display: none;
+            border: 1px solid #e9ecef;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .query-code {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--primary);
+            background: #f0f4ff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 15px 0;
+            text-align: center;
+            width: 100%;
+            font-family: monospace;
+        }
+        
+        .admin-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .admin-btn {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 1rem;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            box-shadow: 0 10px 20px rgba(220, 53, 69, 0.3);
+        }
+        
+        .suggestion-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 22px 0;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .suggestion-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--dark);
+        }
+        
+        .suggestion-author {
+            color: var(--gray);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .suggestion-content {
+            color: #495057;
+            line-height: 1.7;
+            margin-bottom: 18px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .code-note {
+            background: #fff8e6;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+            font-size: 0.95rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            padding: 18px 28px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.4s ease, fadeOut 0.5s ease 3s forwards;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .notification.success {
+            background: linear-gradient(to right, #28a745, #20c997);
+        }
+        
+        .notification.error {
+            background: linear-gradient(to right, #dc3545, #e83e8c);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(120px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            padding: 20px;
+        }
+        
+        .status-details {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #dee2e6;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+        
+        .status-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .status-pending .status-icon {
+            background: rgba(255, 193, 7, 0.2);
+            color: #d4a200;
+        }
+        
+        .status-approved .status-icon {
+            background: rgba(40, 167, 69, 0.2);
+            color: #1e7e34;
+        }
+        
+        .status-rejected .status-icon {
+            background: rgba(220, 53, 69, 0.2);
+            color: #bd2130;
+        }
+        
+        .status-text {
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                max-width: 100%;
+            }
+            
+            .tab {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .admin-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h1>Unicsfall 意见箱</h1>
+            <p class="subtitle">您的每一个意见都是我们前进的动力！我们珍视您的反馈，并承诺认真对待每一条建议。</p>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="submit">提交意见</div>
+            <div class="tab" data-tab="query">查询状态</div>
+            <div class="tab" data-tab="admin">管理员入口</div>
+        </div>
+        
+        <!-- 提交意见表单 -->
+        <div class="tab-content active" id="submit-tab">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-edit"></i> 提交您的宝贵意见</h2>
+                <form id="suggestion-form">
+                    <div class="form-group">
+                        <label for="title"><i class="fas fa-heading"></i> 意见标题 *</label>
+                        <input type="text" id="title" placeholder="请简要描述您的意见" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content"><i class="fas fa-align-left"></i> 意见内容 *</label>
+                        <textarea id="content" placeholder="请详细描述您的意见或建议..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author"><i class="fas fa-user"></i> 意见人 *</label>
+                        <input type="text" id="author" placeholder="请输入您的姓名" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-block">
+                        <i class="fas fa-paper-plane"></i> 提交意见
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 查询状态 -->
+        <div class="tab-content" id="query-tab">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-search"></i> 查询意见状态</h2>
+                <div class="form-group">
+                    <label for="query-code"><i class="fas fa-key"></i> 查询码 *</label>
+                    <input type="text" id="query-code" placeholder="请输入您的查询码" autocomplete="off">
+                </div>
+                <button class="btn btn-block" id="query-btn">
+                    <i class="fas fa-search"></i> 查询状态
+                </button>
+                
+                <div class="query-result" id="query-result">
+                    <h3><i class="fas fa-file-alt"></i> 意见详情</h3>
+                    <div id="status-info"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 管理员界面 -->
+        <div class="tab-content" id="admin-tab">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-lock"></i> 管理员登录</h2>
+                <div class="form-group">
+                    <label for="admin-username"><i class="fas fa-user-shield"></i> 用户名</label>
+                    <input type="text" id="admin-username" placeholder="管理员用户名" value="admin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="admin-password"><i class="fas fa-lock"></i> 密码</label>
+                    <input type="password" id="admin-password" placeholder="管理员密码" value="Unicsfall@2023">
+                </div>
+                
+                <button class="btn btn-block" id="admin-login">
+                    <i class="fas fa-sign-in-alt"></i> 登录管理员面板
+                </button>
+            </div>
+            
+            <div class="card" id="admin-panel" style="display: none;">
+                <h2 class="card-title"><i class="fas fa-tasks"></i> 意见审核</h2>
+                <div id="suggestions-list">
+                    <p>正在加载意见列表...</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Unicsfall 意见反馈系统 &copy; 2023 | 您的反馈将帮助我们不断进步</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 页面加载时初始化数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化localStorage数据
+            if (!localStorage.getItem('suggestions')) {
+                // 预填充一些示例数据
+                const initialData = [
+                    {
+                        id: 1001,
+                        title: "网站性能优化建议",
+                        content: "建议优化网站加载速度，特别是首页图片过多导致加载缓慢。",
+                        author: "张技术",
+                        status: "已采纳",
+                        date: "2023-06-15 10:30",
+                        queryCode: "A5B8C2D9"
+                    },
+                    {
+                        id: 1002,
+                        title: "增加夜间模式功能",
+                        content: "希望增加夜间模式选项，减少夜间使用时的眼睛疲劳。",
+                        author: "李用户",
+                        status: "审核中",
+                        date: "2023-07-01 14:22",
+                        queryCode: "E7F3G1H4"
+                    }
+                ];
+                localStorage.setItem('suggestions', JSON.stringify(initialData));
+            }
+            
+            // 设置管理员凭据
+            localStorage.setItem('admin_username', 'admin');
+            localStorage.setItem('admin_password', 'Unicsfall@2023');
+            
+            // 标签切换功能
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                    
+                    // 添加active类到当前标签
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // 提交意见表单处理
+            const suggestionForm = document.getElementById('suggestion-form');
+            suggestionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+                const author = document.getElementById('author').value;
+                
+                // 生成唯一查询码
+                const queryCode = generateQueryCode();
+                
+                // 创建意见对象
+                const suggestion = {
+                    id: Date.now(),
+                    title,
+                    content,
+                    author,
+                    status: "审核中",
+                    date: new Date().toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    queryCode
+                };
+                
+                // 保存到localStorage
+                const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+                suggestions.push(suggestion);
+                localStorage.setItem('suggestions', JSON.stringify(suggestions));
+                
+                // 显示成功通知
+                showNotification('意见提交成功！', 'success');
+                
+                // 显示查询码
+                showQueryCode(queryCode);
+                
+                // 重置表单
+                suggestionForm.reset();
+            });
+            
+            // 查询按钮处理 - 已修复
+            const queryBtn = document.getElementById('query-btn');
+            queryBtn.addEventListener('click', function() {
+                const queryCode = document.getElementById('query-code').value.trim();
+                
+                if (!queryCode) {
+                    showNotification('请输入查询码！', 'error');
+                    return;
+                }
+                
+                const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+                const suggestion = suggestions.find(s => s.queryCode === queryCode);
+                
+                if (suggestion) {
+                    const statusInfo = document.getElementById('status-info');
+                    
+                    let statusClass = 'status-pending';
+                    if (suggestion.status === '已采纳') statusClass = 'status-approved';
+                    if (suggestion.status === '未采纳') statusClass = 'status-rejected';
+                    
+                    // 创建状态详情HTML
+                    let statusDetails = '';
+                    if (suggestion.status === '审核中') {
+                        statusDetails = `
+                            <div class="status-details">
+                                <div class="status-item status-pending">
+                                    <div class="status-icon"><i class="fas fa-clock"></i></div>
+                                    <div class="status-text">您的意见正在审核中，通常需要1-3个工作日</div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (suggestion.status === '已采纳') {
+                        statusDetails = `
+                            <div class="status-details">
+                                <div class="status-item status-approved">
+                                    <div class="status-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="status-text">您的意见已被采纳，将在下一版本中实现</div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        statusDetails = `
+                            <div class="status-details">
+                                <div class="status-item status-rejected">
+                                    <div class="status-icon"><i class="fas fa-times-circle"></i></div>
+                                    <div class="status-text">您的意见未被采纳，感谢您的参与</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    statusInfo.innerHTML = `
+                        <div class="suggestion-item">
+                            <div class="suggestion-header">
+                                <div class="suggestion-title">${suggestion.title}</div>
+                                <span class="status-badge ${statusClass}">${suggestion.status}</span>
+                            </div>
+                            <div class="suggestion-author">
+                                <i class="fas fa-user"></i> ${suggestion.author} 
+                                <i class="fas fa-clock" style="margin-left: 15px;"></i> ${suggestion.date}
+                            </div>
+                            <div class="suggestion-content">${suggestion.content}</div>
+                            ${statusDetails}
+                        </div>
+                    `;
+                    
+                    document.getElementById('query-result').style.display = 'block';
+                } else {
+                    showNotification('未找到相关意见记录，请检查查询码是否正确', 'error');
+                    document.getElementById('query-result').style.display = 'none';
+                }
+            });
+            
+            // 管理员登录处理
+            const adminLoginBtn = document.getElementById('admin-login');
+            adminLoginBtn.addEventListener('click', function() {
+                const username = document.getElementById('admin-username').value;
+                const password = document.getElementById('admin-password').value;
+                
+                const storedUsername = localStorage.getItem('admin_username');
+                const storedPassword = localStorage.getItem('admin_password');
+                
+                if (username === storedUsername && password === storedPassword) {
+                    showNotification('管理员登录成功！', 'success');
+                    document.getElementById('admin-panel').style.display = 'block';
+                    loadSuggestionsForAdmin();
+                } else {
+                    showNotification('用户名或密码错误！', 'error');
+                }
+            });
+        });
+        
+        // 生成查询码的函数
+        function generateQueryCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+        
+        // 显示查询码的函数
+        function showQueryCode(code) {
+            // 切换到查询标签页
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            
+            document.querySelector('.tab[data-tab="query"]').classList.add('active');
+            document.getElementById('query-tab').classList.add('active');
+            
+            // 显示查询码
+            const queryResult = document.getElementById('query-result');
+            queryResult.innerHTML = `
+                <h3><i class="fas fa-check-circle"></i> 提交成功！</h3>
+                <p>您的意见已成功提交，请保存以下查询码用于跟踪意见状态：</p>
+                <div class="query-code">${code}</div>
+                
+                <div class="status-details">
+                    <div class="status-item status-pending">
+                        <div class="status-icon"><i class="fas fa-clock"></i></div>
+                        <div class="status-text">
+                            <strong>当前状态：审核中</strong><br>
+                            您的意见已进入审核队列，我们将尽快处理
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-note">
+                    <i class="fas fa-exclamation-circle"></i> 重要提示：此查询码只显示一次，请务必妥善保存。如遗忘将无法查询意见状态。
+                </div>
+            `;
+            queryResult.style.display = 'block';
+            
+            // 清空查询输入框
+            document.getElementById('query-code').value = '';
+        }
+        
+        // 为管理员加载意见列表
+        function loadSuggestionsForAdmin() {
+            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestionsList = document.getElementById('suggestions-list');
+            
+            if (suggestions.length === 0) {
+                suggestionsList.innerHTML = '<p>暂无待处理意见</p>';
+                return;
+            }
+            
+            suggestionsList.innerHTML = '';
+            
+            // 按时间倒序排序
+            suggestions.sort((a, b) => b.id - a.id);
+            
+            suggestions.forEach(suggestion => {
+                let statusClass = 'status-pending';
+                if (suggestion.status === '已采纳') statusClass = 'status-approved';
+                if (suggestion.status === '未采纳') statusClass = 'status-rejected';
+                
+                const suggestionElement = document.createElement('div');
+                suggestionElement.className = 'suggestion-item';
+                suggestionElement.innerHTML = `
+                    <div class="suggestion-header">
+                        <div class="suggestion-title">${suggestion.title}</div>
+                        <span class="status-badge ${statusClass}">${suggestion.status}</span>
+                    </div>
+                    <div class="suggestion-author">
+                        <i class="fas fa-user"></i> ${suggestion.author} 
+                        <i class="fas fa-clock" style="margin-left: 15px;"></i> ${suggestion.date}
+                        <i class="fas fa-key" style="margin-left: 15px;"></i> ${suggestion.queryCode}
+                    </div>
+                    <div class="suggestion-content">${suggestion.content}</div>
+                    <div class="admin-controls">
+                        <button class="btn admin-btn btn-success" data-id="${suggestion.id}" data-action="approve">
+                            <i class="fas fa-check"></i> 采纳
+                        </button>
+                        <button class="btn admin-btn btn-danger" data-id="${suggestion.id}" data-action="reject">
+                            <i class="fas fa-times"></i> 拒绝
+                        </button>
+                    </div>
+                `;
+                
+                suggestionsList.appendChild(suggestionElement);
+            });
+            
+            // 添加审核按钮事件监听
+            document.querySelectorAll('.admin-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    const action = this.dataset.action;
+                    
+                    updateSuggestionStatus(id, action);
+                });
+            });
+        }
+        
+        // 更新意见状态
+        function updateSuggestionStatus(id, action) {
+            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestionIndex = suggestions.findIndex(s => s.id === id);
+            
+            if (suggestionIndex !== -1) {
+                if (action === 'approve') {
+                    suggestions[suggestionIndex].status = '已采纳';
+                    showNotification('意见已标记为已采纳', 'success');
+                } else if (action === 'reject') {
+                    suggestions[suggestionIndex].status = '未采纳';
+                    showNotification('意见已标记为未采纳', 'success');
+                }
+                
+                localStorage.setItem('suggestions', JSON.stringify(suggestions));
+                loadSuggestionsForAdmin();
+            }
+        }
+        
+        // 显示通知的函数
+        function showNotification(message, type) {
+            // 移除现有通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) existingNotification.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
