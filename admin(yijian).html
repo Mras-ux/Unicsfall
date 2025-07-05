@@ -286,11 +286,7 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem;">
-                        当前没有意见需要审核
-                    </td>
-                </tr>
+                <!-- 动态内容将通过JavaScript填充 -->
             </tbody>
         </table>
         
@@ -331,9 +327,11 @@
     </div>
     
     <script>
-        // 完全初始化 - 确保从零开始
-        localStorage.setItem('suggestions', JSON.stringify([]));
-        sessionStorage.setItem('adminAuthenticated', 'true'); // 仅为演示，实际应用中应有真正的认证
+        // 完全初始化 - 使用与提交页面相同的存储键
+        if(!localStorage.getItem('unicsfall_suggestions')) {
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
+            console.log('已初始化意见存储');
+        }
         
         // DOM元素
         const tableBody = document.getElementById('tableBody');
@@ -352,9 +350,21 @@
         const itemsPerPage = 5;
         let currentPage = 1;
         
+        // BroadcastChannel用于跨标签页通信
+        let broadcastChannel;
+        if(typeof BroadcastChannel !== 'undefined') {
+            try {
+                broadcastChannel = new BroadcastChannel('unicsfall_suggestions');
+                broadcastChannel.onmessage = handleBroadcastMessage;
+                console.log('BroadcastChannel已初始化');
+            } catch(e) {
+                console.log('BroadcastChannel初始化失败:', e);
+            }
+        }
+        
         // 加载意见数据
         function loadSuggestions() {
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions')) || [];
             
             // 应用筛选
             const statusFilterValue = statusFilter.value;
@@ -396,6 +406,7 @@
                         </td>
                     </tr>
                 `;
+                renderPagination(0);
                 return;
             }
             
@@ -489,7 +500,7 @@
         
         // 查看详情
         function viewDetails(id) {
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
             const suggestion = suggestions.find(s => s.id === id);
             
             if(!suggestion) {
@@ -537,7 +548,7 @@
         
         // 更新状态
         function updateStatus(id, status) {
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
             const index = suggestions.findIndex(s => s.id === id);
             
             if(index === -1) {
@@ -546,7 +557,7 @@
             }
             
             suggestions[index].status = status;
-            localStorage.setItem('suggestions', JSON.stringify(suggestions));
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
             
             renderTable();
             alert(`意见 #${id} 已${status === 'approved' ? '采纳' : '拒绝'}`);
@@ -557,7 +568,7 @@
             if(!currentSuggestionId) return;
             
             const response = document.getElementById('detailResponse').value.trim();
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
             const index = suggestions.findIndex(s => s.id === currentSuggestionId);
             
             if(index === -1) {
@@ -566,11 +577,30 @@
             }
             
             suggestions[index].adminResponse = response;
-            localStorage.setItem('suggestions', JSON.stringify(suggestions));
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
             
             alert('回复已保存');
             closeModal();
             renderTable();
+        }
+        
+        // 处理广播消息
+        function handleBroadcastMessage(event) {
+            if(event.data.type === 'new_suggestion') {
+                const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
+                suggestions.push(event.data.data);
+                localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
+                renderTable();
+                console.log('通过BroadcastChannel收到新意见:', event.data.data);
+            }
+        }
+        
+        // 处理storage事件
+        function handleStorageEvent(event) {
+            if(event.key === 'unicsfall_suggestions') {
+                renderTable();
+                console.log('通过storage事件更新意见列表');
+            }
         }
         
         // 退出登录
@@ -603,13 +633,21 @@
         
         saveResponseBtn.addEventListener('click', saveResponse);
         logoutBtn.addEventListener('click', logout);
+        window.addEventListener('storage', handleStorageEvent);
         
         // 初始化页面
         renderTable();
         
         // 初始化日志
         console.log('管理员界面已完全初始化');
-        console.log('本地存储已重置:', localStorage.getItem('suggestions'));
+        console.log('当前存储的意见:', JSON.parse(localStorage.getItem('unicsfall_suggestions')));
+        
+        // 清理BroadcastChannel
+        window.addEventListener('beforeunload', () => {
+            if(broadcastChannel) {
+                broadcastChannel.close();
+            }
+        });
     </script>
 </body>
 </html>
