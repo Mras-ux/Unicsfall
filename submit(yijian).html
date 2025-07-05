@@ -197,13 +197,6 @@
             h1 {
                 font-size: 24px;
             }
-        .submitted-message {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-            display: none;
         }
     </style>
 </head>
@@ -215,9 +208,8 @@
             <p class="subtitle">您的意见对我们非常重要</p>
         </header>
         
-        <!-- 添加已提交提示 -->
-        <div class="submitted-message" id="submittedMessage">
-            您已成功提交意见！查询码: <strong id="displayTrackingCode"></strong>
+        <div class="submitted-info" id="submittedInfo">
+            您已成功提交意见！您的查询码是：<strong id="savedTrackingCode"></strong>
         </div>
         
         <div class="card">
@@ -247,7 +239,7 @@
                 <input type="text" id="trackingCode" name="trackingCode" required placeholder="请输入您的查询码">
                 <button type="submit" class="btn">查询</button>
             </form>
-            <div id="statusResult" style="margin-top: 1rem;"></div>
+            <div id="statusResult" style="margin-top: 20px;"></div>
         </div>
     </div>
     
@@ -257,7 +249,7 @@
             <p>您的意见已成功提交，请保存以下查询码以便跟踪状态:</p>
             <div class="tracking-code" id="generatedCode"></div>
             <p class="warning">请注意: 此查询码只会显示一次，请妥善保存!</p>
-            <button class="btn" onclick="closeModalAndShowMessage()">确认</button>
+            <button class="btn" onclick="closeModal()">确认</button>
         </div>
     </div>
     
@@ -266,23 +258,18 @@
     </footer>
     
     <script>
-        // 初始化存储 - 使用特定前缀避免冲突
+        // 初始化存储
         if(!localStorage.getItem('unicsfall_suggestions')) {
             localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
         }
         
-        // 检查URL中是否有查询码参数
+        // 检查是否有已保存的查询码
         document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const trackingCode = urlParams.get('trackingCode');
-            
-            if(trackingCode) {
-                // 显示已提交的信息
-                document.getElementById('displayTrackingCode').textContent = trackingCode;
-                document.getElementById('submittedMessage').style.display = 'block';
-                
-                // 自动填充查询框
-                document.getElementById('trackingCode').value = trackingCode;
+            const savedCode = localStorage.getItem('last_submitted_code');
+            if(savedCode) {
+                document.getElementById('submittedInfo').style.display = 'block';
+                document.getElementById('savedTrackingCode').textContent = savedCode;
+                document.getElementById('trackingCode').value = savedCode;
                 
                 // 自动查询状态
                 setTimeout(() => {
@@ -326,41 +313,16 @@
             suggestions.push(suggestion);
             localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
             
+            // 保存查询码以便刷新后显示
+            localStorage.setItem('last_submitted_code', trackingCode);
+            
             // 显示查询码
             document.getElementById('generatedCode').textContent = trackingCode;
             document.getElementById('resultModal').style.display = 'flex';
             
             // 清空表单
             this.reset();
-            
-            // 通知其他窗口
-            notifyAdminPanel(suggestion);
-            
-            console.log('新意见已提交:', suggestion);
         });
-        
-        function closeModalAndShowMessage() {
-            const trackingCode = document.getElementById('generatedCode').textContent;
-            
-            // 关闭模态框
-            document.getElementById('resultModal').style.display = 'none';
-            
-            // 显示页面上的消息
-            document.getElementById('displayTrackingCode').textContent = trackingCode;
-            document.getElementById('submittedMessage').style.display = 'block';
-            
-            // 自动填充查询框
-            document.getElementById('trackingCode').value = trackingCode;
-            
-            // 更新URL但不刷新页面
-            const newUrl = window.location.pathname + '?trackingCode=' + encodeURIComponent(trackingCode);
-            window.history.pushState({}, '', newUrl);
-            
-            // 自动查询状态
-            setTimeout(() => {
-                document.getElementById('statusForm').dispatchEvent(new Event('submit'));
-            }, 500);
-        }
         
         document.getElementById('statusForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -377,7 +339,7 @@
             
             if(!suggestion) {
                 document.getElementById('statusResult').innerHTML = `
-                    <div class="card" style="color: var(--accent-color);">
+                    <div class="card" style="color: var(--accent-color); padding: 15px;">
                         <p>未找到与查询码 "${code}" 匹配的意见</p>
                     </div>
                 `;
@@ -401,14 +363,29 @@
             }
             
             document.getElementById('statusResult').innerHTML = `
-                <div class="card">
+                <div class="card" style="padding: 15px;">
                     <p><strong>标题:</strong> ${suggestion.title}</p>
-                    <p><strong>状态:</strong> <span style="color: ${statusColor}">${statusText}</span></p>
+                    <p><strong>状态:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span></p>
                     ${suggestion.adminResponse ? `<p><strong>管理员回复:</strong> ${suggestion.adminResponse}</p>` : ''}
-                    <p><small>提交时间: ${new Date(suggestion.submissionDate).toLocaleString()}</small></p>
+                    <p style="margin-top: 10px; color: var(--light-text); font-size: 14px;">提交时间: ${new Date(suggestion.submissionDate).toLocaleString()}</p>
                 </div>
             `;
         });
+        
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            
+            // 显示已提交信息
+            const code = document.getElementById('generatedCode').textContent;
+            document.getElementById('submittedInfo').style.display = 'block';
+            document.getElementById('savedTrackingCode').textContent = code;
+            document.getElementById('trackingCode').value = code;
+            
+            // 自动查询状态
+            setTimeout(() => {
+                document.getElementById('statusForm').dispatchEvent(new Event('submit'));
+            }, 500);
+        }
         
         function generateTrackingCode() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -417,28 +394,6 @@
                 result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             return result;
-        }
-        
-        function notifyAdminPanel(suggestion) {
-            // BroadcastChannel方式
-            if(typeof BroadcastChannel !== 'undefined') {
-                try {
-                    const channel = new BroadcastChannel('unicsfall_suggestions');
-                    channel.postMessage({
-                        type: 'new_suggestion',
-                        data: suggestion
-                    });
-                    channel.close();
-                } catch(e) {
-                    console.error('BroadcastChannel错误:', e);
-                }
-            }
-            
-            // storage事件方式
-            const event = new Event('storage');
-            event.key = 'unicsfall_suggestions';
-            event.newValue = localStorage.getItem('unicsfall_suggestions');
-            window.dispatchEvent(event);
         }
     </script>
 </body>
