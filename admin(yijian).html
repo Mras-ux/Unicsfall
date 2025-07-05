@@ -256,8 +256,6 @@
                 <select id="statusFilter">
                     <option value="all">所有状态</option>
                     <option value="pending">审核中</option>
-                    <option value="approved">已采纳</option>
-                    <option value="rejected">未采纳</option>
                 </select>
             </div>
             
@@ -321,7 +319,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">取消</button>
-                <button class="btn" id="saveResponseBtn">保存回复</button>
+                <button class="btn" id="saveResponseBtn">保存并处理</button>
             </div>
         </div>
     </div>
@@ -330,7 +328,6 @@
         // 完全初始化 - 使用与提交页面相同的存储键
         if(!localStorage.getItem('unicsfall_suggestions')) {
             localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
-            console.log('已初始化意见存储');
         }
         
         // DOM元素
@@ -350,34 +347,23 @@
         const itemsPerPage = 5;
         let currentPage = 1;
         
-        // BroadcastChannel用于跨标签页通信
-        let broadcastChannel;
-        if(typeof BroadcastChannel !== 'undefined') {
-            try {
-                broadcastChannel = new BroadcastChannel('unicsfall_suggestions');
-                broadcastChannel.onmessage = handleBroadcastMessage;
-                console.log('BroadcastChannel已初始化');
-            } catch(e) {
-                console.log('BroadcastChannel初始化失败:', e);
-            }
-        }
-        
         // 加载意见数据
         function loadSuggestions() {
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions')) || [];
+            let suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions')) || [];
+            
+            // 只显示待审核的意见
+            suggestions = suggestions.filter(s => s.status === 'pending');
             
             // 应用筛选
             const statusFilterValue = statusFilter.value;
             const searchText = searchInput.value.toLowerCase();
             
-            let filtered = [...suggestions];
-            
             if(statusFilterValue !== 'all') {
-                filtered = filtered.filter(s => s.status === statusFilterValue);
+                suggestions = suggestions.filter(s => s.status === statusFilterValue);
             }
             
             if(searchText) {
-                filtered = filtered.filter(s => 
+                suggestions = suggestions.filter(s => 
                     s.title.toLowerCase().includes(searchText) || 
                     s.content.toLowerCase().includes(searchText) ||
                     s.name.toLowerCase().includes(searchText)
@@ -385,9 +371,9 @@
             }
             
             // 按时间降序排序
-            filtered.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+            suggestions.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
             
-            return filtered;
+            return suggestions;
         }
         
         // 渲染表格
@@ -402,44 +388,26 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" style="text-align: center; padding: 2rem;">
-                            当前没有意见需要审核
+                            当前没有待审核的意见
                         </td>
                     </tr>
                 `;
-                renderPagination(0);
                 return;
             }
             
             paginatedItems.forEach(suggestion => {
                 const row = document.createElement('tr');
                 
-                let statusText, statusClass;
-                switch(suggestion.status) {
-                    case 'approved':
-                        statusText = '已采纳';
-                        statusClass = 'status-approved';
-                        break;
-                    case 'rejected':
-                        statusText = '未采纳';
-                        statusClass = 'status-rejected';
-                        break;
-                    default:
-                        statusText = '审核中';
-                        statusClass = 'status-pending';
-                }
-                
                 row.innerHTML = `
                     <td>#${suggestion.id}</td>
                     <td>${suggestion.title}</td>
                     <td>${suggestion.name}</td>
                     <td>${new Date(suggestion.submissionDate).toLocaleString()}</td>
-                    <td class="${statusClass}">${statusText}</td>
+                    <td class="status-pending">审核中</td>
                     <td>
                         <div class="action-btns">
-                            ${suggestion.status === 'pending' ? `
-                                <button class="action-btn approve-btn" onclick="updateStatus(${suggestion.id}, 'approved')">采纳</button>
-                                <button class="action-btn reject-btn" onclick="updateStatus(${suggestion.id}, 'rejected')">拒绝</button>
-                            ` : ''}
+                            <button class="action-btn approve-btn" onclick="processSuggestion(${suggestion.id}, 'approved')">采纳</button>
+                            <button class="action-btn reject-btn" onclick="processSuggestion(${suggestion.id}, 'rejected')">拒绝</button>
                             <button class="action-btn" onclick="viewDetails(${suggestion.id})">详情</button>
                         </div>
                     </td>
@@ -449,6 +417,82 @@
             });
             
             renderPagination(suggestions.length);
+        }
+        
+        // 处理意见(采纳或拒绝)
+        function processSuggestion(id, action) {
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
+            const index = suggestions.findIndex(s => s.id === id);
+            
+            if(index === -1) {
+                alert('未找到该意见');
+                return;
+            }
+            
+            // 从数组中删除该意见
+            suggestions.splice(index, 1);
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
+            
+            alert(`意见 #${id} 已${action === 'approved' ? '采纳并删除' : '拒绝并删除'}`);
+            renderTable();
+        }
+        
+        // 查看详情
+        function viewDetails(id) {
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
+            const suggestion = suggestions.find(s => s.id === id);
+            
+            if(!suggestion) {
+                alert('未找到该意见');
+                return;
+            }
+            
+            currentSuggestionId = id;
+            
+            document.getElementById('detailId').textContent = `#${id}`;
+            document.getElementById('detailTitle').textContent = suggestion.title;
+            document.getElementById('detailName').textContent = suggestion.name;
+            document.getElementById('detailTime').textContent = new Date(suggestion.submissionDate).toLocaleString();
+            document.getElementById('detailCode').textContent = suggestion.trackingCode;
+            document.getElementById('detailContent').textContent = suggestion.content;
+            document.getElementById('detailResponse').value = suggestion.adminResponse || '';
+            
+            const statusElement = document.getElementById('detailStatus');
+            statusElement.textContent = '审核中';
+            statusElement.className = 'status-pending';
+            
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+        
+        // 保存回复并处理意见
+        function saveResponseAndProcess() {
+            if(!currentSuggestionId) return;
+            
+            const response = document.getElementById('detailResponse').value.trim();
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
+            const index = suggestions.findIndex(s => s.id === currentSuggestionId);
+            
+            if(index === -1) {
+                alert('未找到该意见');
+                return;
+            }
+            
+            // 添加回复
+            suggestions[index].adminResponse = response;
+            
+            // 从数组中删除该意见
+            suggestions.splice(index, 1);
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
+            
+            alert('回复已保存，意见已处理');
+            closeModal();
+            renderTable();
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+            currentSuggestionId = null;
         }
         
         // 渲染分页
@@ -498,111 +542,6 @@
             pagination.appendChild(nextBtn);
         }
         
-        // 查看详情
-        function viewDetails(id) {
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const suggestion = suggestions.find(s => s.id === id);
-            
-            if(!suggestion) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            currentSuggestionId = id;
-            
-            document.getElementById('detailId').textContent = `#${id}`;
-            document.getElementById('detailTitle').textContent = suggestion.title;
-            document.getElementById('detailName').textContent = suggestion.name;
-            document.getElementById('detailTime').textContent = new Date(suggestion.submissionDate).toLocaleString();
-            document.getElementById('detailCode').textContent = suggestion.trackingCode;
-            document.getElementById('detailContent').textContent = suggestion.content;
-            document.getElementById('detailResponse').value = suggestion.adminResponse || '';
-            
-            const statusElement = document.getElementById('detailStatus');
-            let statusText, statusClass;
-            switch(suggestion.status) {
-                case 'approved':
-                    statusText = '已采纳';
-                    statusClass = 'status-approved';
-                    break;
-                case 'rejected':
-                    statusText = '未采纳';
-                    statusClass = 'status-rejected';
-                    break;
-                default:
-                    statusText = '审核中';
-                    statusClass = 'status-pending';
-            }
-            
-            statusElement.textContent = statusText;
-            statusElement.className = statusClass;
-            
-            document.getElementById('detailModal').style.display = 'flex';
-        }
-        
-        // 关闭模态框
-        function closeModal() {
-            document.getElementById('detailModal').style.display = 'none';
-            currentSuggestionId = null;
-        }
-        
-        // 更新状态
-        function updateStatus(id, status) {
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const index = suggestions.findIndex(s => s.id === id);
-            
-            if(index === -1) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            suggestions[index].status = status;
-            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
-            
-            renderTable();
-            alert(`意见 #${id} 已${status === 'approved' ? '采纳' : '拒绝'}`);
-        }
-        
-        // 保存回复
-        function saveResponse() {
-            if(!currentSuggestionId) return;
-            
-            const response = document.getElementById('detailResponse').value.trim();
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const index = suggestions.findIndex(s => s.id === currentSuggestionId);
-            
-            if(index === -1) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            suggestions[index].adminResponse = response;
-            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
-            
-            alert('回复已保存');
-            closeModal();
-            renderTable();
-        }
-        
-        // 处理广播消息
-        function handleBroadcastMessage(event) {
-            if(event.data.type === 'new_suggestion') {
-                const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-                suggestions.push(event.data.data);
-                localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
-                renderTable();
-                console.log('通过BroadcastChannel收到新意见:', event.data.data);
-            }
-        }
-        
-        // 处理storage事件
-        function handleStorageEvent(event) {
-            if(event.key === 'unicsfall_suggestions') {
-                renderTable();
-                console.log('通过storage事件更新意见列表');
-            }
-        }
-        
         // 退出登录
         function logout() {
             sessionStorage.removeItem('adminAuthenticated');
@@ -631,23 +570,11 @@
             renderTable();
         });
         
-        saveResponseBtn.addEventListener('click', saveResponse);
+        saveResponseBtn.addEventListener('click', saveResponseAndProcess);
         logoutBtn.addEventListener('click', logout);
-        window.addEventListener('storage', handleStorageEvent);
         
         // 初始化页面
         renderTable();
-        
-        // 初始化日志
-        console.log('管理员界面已完全初始化');
-        console.log('当前存储的意见:', JSON.parse(localStorage.getItem('unicsfall_suggestions')));
-        
-        // 清理BroadcastChannel
-        window.addEventListener('beforeunload', () => {
-            if(broadcastChannel) {
-                broadcastChannel.close();
-            }
-        });
     </script>
 </body>
 </html>
