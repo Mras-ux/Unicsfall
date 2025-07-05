@@ -49,6 +49,8 @@
         
         h1 {
             color: var(--primary-color);
+            display: flex;
+            align-items: center;
         }
         
         .logout {
@@ -231,6 +233,48 @@
             gap: 1rem;
         }
         
+        .real-time-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+        }
+        .connection-status.offline {
+            background-color: #f44336;
+        }
+        .connection-status::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: white;
+        }
+        
         @media (max-width: 768px) {
             th, td {
                 padding: 0.75rem;
@@ -247,7 +291,7 @@
     <div class="container">
         <header>
             <img src="https://via.placeholder.com/120x60?text=Unicsfall" alt="Unicsfall Logo" class="logo">
-            <h1>意见审核系统</h1>
+            <h1>意见审核系统 <span class="real-time-badge" id="realTimeBadge">实时更新</span></h1>
             <a href="#" class="logout" id="logoutBtn">退出登录</a>
         </header>
         
@@ -284,13 +328,15 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- 动态内容将通过JavaScript填充 -->
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        正在加载意见...
+                    </td>
+                </tr>
             </tbody>
         </table>
         
-        <div class="pagination" id="pagination">
-            <!-- 分页将通过JavaScript生成 -->
-        </div>
+        <div class="pagination" id="pagination"></div>
     </div>
     
     <div class="modal" id="detailModal">
@@ -324,12 +370,40 @@
         </div>
     </div>
     
+    <div class="connection-status" id="connectionStatus">实时连接已建立</div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // 完全初始化 - 使用与提交页面相同的存储键
-        if(!localStorage.getItem('unicsfall_suggestions')) {
-            localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
-        }
+        // 替换为您的Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyABC123XYZ456DEF789GHI",
+            authDomain: "unicsfall-suggestions.firebaseapp.com",
+            databaseURL: "https://unicsfall-suggestions.firebaseio.com",
+            projectId: "unicsfall-suggestions",
+            storageBucket: "unicsfall-suggestions.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abc123def456ghi789jkl"
+        };
         
+        // 初始化Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // 连接状态监控
+        const connectionRef = firebase.database().ref('.info/connected');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        connectionRef.on('value', (snapshot) => {
+            if (snapshot.val() === true) {
+                connectionStatus.textContent = "实时连接已建立";
+                connectionStatus.classList.remove('offline');
+            } else {
+                connectionStatus.textContent = "离线模式 - 连接恢复后将同步";
+                connectionStatus.classList.add('offline');
+            }
+        });
+
         // DOM元素
         const tableBody = document.getElementById('tableBody');
         const pagination = document.getElementById('pagination');
@@ -344,47 +418,37 @@
         let currentSuggestionId = null;
         
         // 分页设置
-        const itemsPerPage = 5;
+        const itemsPerPage = 10;
         let currentPage = 1;
+        let allSuggestions = [];
         
-        // 加载意见数据
-        function loadSuggestions() {
-            let suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions')) || [];
-            
-            // 只显示待审核的意见
-            suggestions = suggestions.filter(s => s.status === 'pending');
-            
-            // 应用筛选
-            const statusFilterValue = statusFilter.value;
-            const searchText = searchInput.value.toLowerCase();
-            
-            if(statusFilterValue !== 'all') {
-                suggestions = suggestions.filter(s => s.status === statusFilterValue);
-            }
-            
-            if(searchText) {
-                suggestions = suggestions.filter(s => 
-                    s.title.toLowerCase().includes(searchText) || 
-                    s.content.toLowerCase().includes(searchText) ||
-                    s.name.toLowerCase().includes(searchText)
-                );
-            }
-            
-            // 按时间降序排序
-            suggestions.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
-            
-            return suggestions;
+        // 实时监听意见变化
+        function setupRealtimeListener() {
+            database.ref('suggestions').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
+                allSuggestions = [];
+                snapshot.forEach(child => {
+                    allSuggestions.push(child.val());
+                });
+                
+                // 按时间降序排序
+                allSuggestions.sort((a, b) => b.createdAt - a.createdAt);
+                
+                // 更新本地存储
+                localStorage.setItem('unicsfall_suggestions', JSON.stringify(allSuggestions));
+                
+                // 重新渲染表格
+                renderTable();
+            });
         }
         
         // 渲染表格
         function renderTable() {
-            const suggestions = loadSuggestions();
             const startIndex = (currentPage - 1) * itemsPerPage;
-            const paginatedItems = suggestions.slice(startIndex, startIndex + itemsPerPage);
+            const paginatedItems = allSuggestions.slice(startIndex, startIndex + itemsPerPage);
             
             tableBody.innerHTML = '';
             
-            if(suggestions.length === 0) {
+            if(allSuggestions.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" style="text-align: center; padding: 2rem;">
@@ -392,6 +456,7 @@
                         </td>
                     </tr>
                 `;
+                renderPagination(0);
                 return;
             }
             
@@ -416,83 +481,7 @@
                 tableBody.appendChild(row);
             });
             
-            renderPagination(suggestions.length);
-        }
-        
-        // 处理意见(采纳或拒绝)
-        function processSuggestion(id, action) {
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const index = suggestions.findIndex(s => s.id === id);
-            
-            if(index === -1) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            // 从数组中删除该意见
-            suggestions.splice(index, 1);
-            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
-            
-            alert(`意见 #${id} 已${action === 'approved' ? '采纳并删除' : '拒绝并删除'}`);
-            renderTable();
-        }
-        
-        // 查看详情
-        function viewDetails(id) {
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const suggestion = suggestions.find(s => s.id === id);
-            
-            if(!suggestion) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            currentSuggestionId = id;
-            
-            document.getElementById('detailId').textContent = `#${id}`;
-            document.getElementById('detailTitle').textContent = suggestion.title;
-            document.getElementById('detailName').textContent = suggestion.name;
-            document.getElementById('detailTime').textContent = new Date(suggestion.submissionDate).toLocaleString();
-            document.getElementById('detailCode').textContent = suggestion.trackingCode;
-            document.getElementById('detailContent').textContent = suggestion.content;
-            document.getElementById('detailResponse').value = suggestion.adminResponse || '';
-            
-            const statusElement = document.getElementById('detailStatus');
-            statusElement.textContent = '审核中';
-            statusElement.className = 'status-pending';
-            
-            document.getElementById('detailModal').style.display = 'flex';
-        }
-        
-        // 保存回复并处理意见
-        function saveResponseAndProcess() {
-            if(!currentSuggestionId) return;
-            
-            const response = document.getElementById('detailResponse').value.trim();
-            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
-            const index = suggestions.findIndex(s => s.id === currentSuggestionId);
-            
-            if(index === -1) {
-                alert('未找到该意见');
-                return;
-            }
-            
-            // 添加回复
-            suggestions[index].adminResponse = response;
-            
-            // 从数组中删除该意见
-            suggestions.splice(index, 1);
-            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
-            
-            alert('回复已保存，意见已处理');
-            closeModal();
-            renderTable();
-        }
-        
-        // 关闭模态框
-        function closeModal() {
-            document.getElementById('detailModal').style.display = 'none';
-            currentSuggestionId = null;
+            renderPagination(allSuggestions.length);
         }
         
         // 渲染分页
@@ -542,6 +531,75 @@
             pagination.appendChild(nextBtn);
         }
         
+        // 处理意见(采纳或拒绝)
+        function processSuggestion(id, action) {
+            const updates = {};
+            updates['/suggestions/' + id + '/status'] = action;
+            updates['/suggestions/' + id + '/processedAt'] = new Date().toISOString();
+            
+            database.ref().update(updates)
+                .then(() => {
+                    alert(`意见 #${id} 已${action === 'approved' ? '采纳' : '拒绝'}`);
+                })
+                .catch(error => {
+                    console.error('处理失败:', error);
+                    alert('处理失败，请重试');
+                });
+        }
+        
+        // 查看详情
+        function viewDetails(id) {
+            const suggestion = allSuggestions.find(s => s.id === id);
+            
+            if(!suggestion) {
+                alert('未找到该意见');
+                return;
+            }
+            
+            currentSuggestionId = id;
+            
+            document.getElementById('detailId').textContent = `#${id}`;
+            document.getElementById('detailTitle').textContent = suggestion.title;
+            document.getElementById('detailName').textContent = suggestion.name;
+            document.getElementById('detailTime').textContent = new Date(suggestion.submissionDate).toLocaleString();
+            document.getElementById('detailCode').textContent = suggestion.trackingCode;
+            document.getElementById('detailContent').textContent = suggestion.content;
+            document.getElementById('detailResponse').value = suggestion.adminResponse || '';
+            
+            const statusElement = document.getElementById('detailStatus');
+            statusElement.textContent = '审核中';
+            statusElement.className = 'status-pending';
+            
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+        
+        // 保存回复并处理意见
+        function saveResponseAndProcess() {
+            if(!currentSuggestionId) return;
+            
+            const response = document.getElementById('detailResponse').value.trim();
+            const updates = {};
+            updates['/suggestions/' + currentSuggestionId + '/adminResponse'] = response;
+            updates['/suggestions/' + currentSuggestionId + '/status'] = 'approved';
+            updates['/suggestions/' + currentSuggestionId + '/processedAt'] = new Date().toISOString();
+            
+            database.ref().update(updates)
+                .then(() => {
+                    alert('回复已保存，意见已处理');
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error('保存失败:', error);
+                    alert('保存失败，请重试');
+                });
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+            currentSuggestionId = null;
+        }
+        
         // 退出登录
         function logout() {
             sessionStorage.removeItem('adminAuthenticated');
@@ -558,9 +616,63 @@
         
         searchBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            currentPage = 1;
-            renderTable();
+            const searchText = searchInput.value.toLowerCase();
+            
+            if(!searchText) {
+                renderTable();
+                return;
+            }
+            
+            const filtered = allSuggestions.filter(s => 
+                s.title.toLowerCase().includes(searchText) || 
+                s.content.toLowerCase().includes(searchText) ||
+                s.name.toLowerCase().includes(searchText)
+            );
+            
+            renderFilteredTable(filtered);
         });
+        
+        function renderFilteredTable(filteredSuggestions) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedItems = filteredSuggestions.slice(startIndex, startIndex + itemsPerPage);
+            
+            tableBody.innerHTML = '';
+            
+            if(filteredSuggestions.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            没有找到匹配的意见
+                        </td>
+                    </tr>
+                `;
+                renderPagination(0);
+                return;
+            }
+            
+            paginatedItems.forEach(suggestion => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>#${suggestion.id}</td>
+                    <td>${suggestion.title}</td>
+                    <td>${suggestion.name}</td>
+                    <td>${new Date(suggestion.submissionDate).toLocaleString()}</td>
+                    <td class="status-pending">审核中</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn approve-btn" onclick="processSuggestion(${suggestion.id}, 'approved')">采纳</button>
+                            <button class="action-btn reject-btn" onclick="processSuggestion(${suggestion.id}, 'rejected')">拒绝</button>
+                            <button class="action-btn" onclick="viewDetails(${suggestion.id})">详情</button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            renderPagination(filteredSuggestions.length);
+        }
         
         resetBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -574,7 +686,7 @@
         logoutBtn.addEventListener('click', logout);
         
         // 初始化页面
-        renderTable();
+        setupRealtimeListener();
     </script>
 </body>
 </html>
