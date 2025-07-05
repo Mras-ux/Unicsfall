@@ -234,8 +234,11 @@
     </footer>
     
     <script>
-        // 初始化存储 - 确保从零开始
-        localStorage.setItem('suggestions', JSON.stringify([]));
+        // 初始化存储 - 使用特定前缀避免冲突
+        if(!localStorage.getItem('unicsfall_suggestions')) {
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
+            console.log('已初始化意见存储');
+        }
         
         document.getElementById('suggestionForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -268,9 +271,9 @@
             };
             
             // 保存到本地存储
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
             suggestions.push(suggestion);
-            localStorage.setItem('suggestions', JSON.stringify(suggestions));
+            localStorage.setItem('unicsfall_suggestions', JSON.stringify(suggestions));
             
             // 显示查询码
             document.getElementById('generatedCode').textContent = trackingCode;
@@ -278,6 +281,9 @@
             
             // 清空表单
             this.reset();
+            
+            // 通知其他窗口
+            notifyAdminPanel(suggestion);
             
             console.log('新意见已提交:', suggestion);
             console.log('当前所有意见:', suggestions);
@@ -293,7 +299,7 @@
             }
             
             // 从本地存储查找意见
-            const suggestions = JSON.parse(localStorage.getItem('suggestions'));
+            const suggestions = JSON.parse(localStorage.getItem('unicsfall_suggestions'));
             const suggestion = suggestions.find(s => s.trackingCode === code);
             
             if(!suggestion) {
@@ -346,9 +352,34 @@
             return result;
         }
         
+        function notifyAdminPanel(suggestion) {
+            // 尝试通过BroadcastChannel API通知
+            if(typeof BroadcastChannel !== 'undefined') {
+                try {
+                    const channel = new BroadcastChannel('unicsfall_suggestions');
+                    channel.postMessage({
+                        type: 'new_suggestion',
+                        data: suggestion
+                    });
+                    channel.close();
+                    console.log('已通过BroadcastChannel发送通知');
+                } catch(e) {
+                    console.log('BroadcastChannel不可用:', e);
+                }
+            }
+            
+            // 回退到localStorage事件
+            const event = new Event('storage');
+            event.key = 'unicsfall_suggestions';
+            event.newValue = localStorage.getItem('unicsfall_suggestions');
+            window.dispatchEvent(event);
+            
+            console.log('已触发storage事件通知');
+        }
+        
         // 初始化日志
         console.log('用户提交界面已完全初始化');
-        console.log('本地存储已重置:', localStorage.getItem('suggestions'));
+        console.log('当前存储的意见:', JSON.parse(localStorage.getItem('unicsfall_suggestions')));
     </script>
 </body>
 </html>
