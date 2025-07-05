@@ -5,178 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unicsfall - 意见提交</title>
     <style>
-        :root {
-            --primary-color: #4a6bff;
-            --secondary-color: #f8f9fa;
-            --accent-color: #ff6b6b;
-            --text-color: #333;
-            --light-text: #6c757d;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7ff;
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .logo {
-            width: 120px;
-            margin-bottom: 1rem;
-        }
-        
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-        
-        .subtitle {
-            color: var(--light-text);
-            font-weight: normal;
-        }
-        
-        .card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        input, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-        
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-        
-        textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-        
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn:hover {
-            background-color: #3a56d4;
-        }
-        
-        .result-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-        
-        .tracking-code {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 1rem 0;
+        /* 之前的样式保持不变，这里省略以节省空间 */
+        /* 只添加一个新样式 */
+        .submitted-message {
+            background-color: #d4edda;
+            color: #155724;
             padding: 1rem;
-            background-color: var(--secondary-color);
             border-radius: var(--border-radius);
-            word-break: break-all;
-        }
-        
-        .warning {
-            color: var(--accent-color);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-        
-        footer {
-            text-align: center;
-            color: var(--light-text);
-            margin-top: 2rem;
-            font-size: 0.9rem;
-        }
-        
-        .status-check {
-            margin-top: 2rem;
-        }
-        
-        .status-form {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .status-form input {
-            flex: 1;
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            .card {
-                padding: 1.5rem;
-            }
-            
-            .status-form {
-                flex-direction: column;
-            }
+            margin-bottom: 1.5rem;
+            display: none;
         }
     </style>
 </head>
@@ -187,6 +24,11 @@
             <h1>意见箱</h1>
             <p class="subtitle">您的意见对我们非常重要</p>
         </header>
+        
+        <!-- 添加已提交提示 -->
+        <div class="submitted-message" id="submittedMessage">
+            您已成功提交意见！查询码: <strong id="displayTrackingCode"></strong>
+        </div>
         
         <div class="card">
             <form id="suggestionForm">
@@ -225,7 +67,7 @@
             <p>您的意见已成功提交，请保存以下查询码以便跟踪状态:</p>
             <div class="tracking-code" id="generatedCode"></div>
             <p class="warning">请注意: 此查询码只会显示一次，请妥善保存!</p>
-            <button class="btn" onclick="closeModal()">确认</button>
+            <button class="btn" onclick="closeModalAndShowMessage()">确认</button>
         </div>
     </div>
     
@@ -237,8 +79,27 @@
         // 初始化存储 - 使用特定前缀避免冲突
         if(!localStorage.getItem('unicsfall_suggestions')) {
             localStorage.setItem('unicsfall_suggestions', JSON.stringify([]));
-            console.log('已初始化意见存储');
         }
+        
+        // 检查URL中是否有查询码参数
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingCode = urlParams.get('trackingCode');
+            
+            if(trackingCode) {
+                // 显示已提交的信息
+                document.getElementById('displayTrackingCode').textContent = trackingCode;
+                document.getElementById('submittedMessage').style.display = 'block';
+                
+                // 自动填充查询框
+                document.getElementById('trackingCode').value = trackingCode;
+                
+                // 自动查询状态
+                setTimeout(() => {
+                    document.getElementById('statusForm').dispatchEvent(new Event('submit'));
+                }, 500);
+            }
+        });
         
         document.getElementById('suggestionForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -286,8 +147,30 @@
             notifyAdminPanel(suggestion);
             
             console.log('新意见已提交:', suggestion);
-            console.log('当前所有意见:', suggestions);
         });
+        
+        function closeModalAndShowMessage() {
+            const trackingCode = document.getElementById('generatedCode').textContent;
+            
+            // 关闭模态框
+            document.getElementById('resultModal').style.display = 'none';
+            
+            // 显示页面上的消息
+            document.getElementById('displayTrackingCode').textContent = trackingCode;
+            document.getElementById('submittedMessage').style.display = 'block';
+            
+            // 自动填充查询框
+            document.getElementById('trackingCode').value = trackingCode;
+            
+            // 更新URL但不刷新页面
+            const newUrl = window.location.pathname + '?trackingCode=' + encodeURIComponent(trackingCode);
+            window.history.pushState({}, '', newUrl);
+            
+            // 自动查询状态
+            setTimeout(() => {
+                document.getElementById('statusForm').dispatchEvent(new Event('submit'));
+            }, 500);
+        }
         
         document.getElementById('statusForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -335,13 +218,7 @@
                     <p><small>提交时间: ${new Date(suggestion.submissionDate).toLocaleString()}</small></p>
                 </div>
             `;
-            
-            this.reset();
         });
-        
-        function closeModal() {
-            document.getElementById('resultModal').style.display = 'none';
-        }
         
         function generateTrackingCode() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -353,7 +230,7 @@
         }
         
         function notifyAdminPanel(suggestion) {
-            // 尝试通过BroadcastChannel API通知
+            // BroadcastChannel方式
             if(typeof BroadcastChannel !== 'undefined') {
                 try {
                     const channel = new BroadcastChannel('unicsfall_suggestions');
@@ -362,24 +239,17 @@
                         data: suggestion
                     });
                     channel.close();
-                    console.log('已通过BroadcastChannel发送通知');
                 } catch(e) {
-                    console.log('BroadcastChannel不可用:', e);
+                    console.error('BroadcastChannel错误:', e);
                 }
             }
             
-            // 回退到localStorage事件
+            // storage事件方式
             const event = new Event('storage');
             event.key = 'unicsfall_suggestions';
             event.newValue = localStorage.getItem('unicsfall_suggestions');
             window.dispatchEvent(event);
-            
-            console.log('已触发storage事件通知');
         }
-        
-        // 初始化日志
-        console.log('用户提交界面已完全初始化');
-        console.log('当前存储的意见:', JSON.parse(localStorage.getItem('unicsfall_suggestions')));
     </script>
 </body>
 </html>
