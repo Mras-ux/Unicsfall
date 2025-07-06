@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicsfall 管理员申请平台</title>
+    <style>
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #f8f9fa;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.2);
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            background-color: #3a5bef;
+            transform: translateY(-2px);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background-color: var(--warning-color);
+            color: var(--dark-color);
+        }
+        
+        .status-approved {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .status-rejected {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .result-card {
+            text-align: center;
+            display: none;
+        }
+        
+        .result-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .query-code {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--primary-color);
+            background-color: #f0f4ff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            display: inline-block;
+        }
+        
+        /* 移除管理员按钮样式 */
+        /*
+        .admin-link {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        
+        .admin-btn {
+            background-color: var(--dark-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            background-color: #23272b;
+        }
+        */
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            animation: modalopen 0.4s;
+        }
+        
+        @keyframes modalopen {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        /* Admin panel styles */
+        .admin-panel {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .submissions-list {
+            margin-top: 20px;
+        }
+        
+        .submission-item {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .submission-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .submission-title {
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--dark-color);
+        }
+        
+        .submission-date {
+            font-size: 14px;
+            color: #777;
+        }
+        
+        .submission-author {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .submission-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .approve-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .reject-btn {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .approve-btn:hover {
+            background-color: #218838;
+        }
+        
+        .reject-btn:hover {
+            background-color: #c82333;
+        }
+        
+        /* Query section styles */
+        .query-section {
+            margin-top: 40px;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            header {
+                padding: 15px 0;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .submission-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .submission-date {
+                margin-top: 5px;
+            }
+        }
+        
+        /* Animation for status change */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        /* 隐藏的热键提示 */
+        .hotkey-hint {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .hotkey-hint.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Unicsfall 管理员申请平台</h1>
+            <p class="tagline">提交您的申请，参与社区管理</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- 移除了可见的管理员按钮 -->
+        
+        <div class="card" id="applicationForm">
+            <h2>提交申请</h2>
+            <p>请填写以下信息提交您的管理员申请</p>
+            
+            <form id="submitForm">
+                <div class="form-group">
+                    <label for="title">意见标题</label>
+                    <input type="text" id="title" name="title" required placeholder="请输入申请标题">
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">意见内容</label>
+                    <textarea id="content" name="content" required placeholder="请详细描述您的申请理由和相关经验"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="author">意见人</label>
+                    <input type="text" id="author" name="author" required placeholder="您的姓名或昵称">
+                </div>
+                
+                <button type="submit" class="btn btn-block">提交申请</button>
+            </form>
+        </div>
+        
+        <div class="card result-card" id="submissionResult">
+            <div class="result-icon">✓</div>
+            <h2>提交成功!</h2>
+            <p>您的申请已成功提交，请保存以下查询码以跟踪申请状态</p>
+            <div class="query-code" id="generatedCode"></div>
+            <p><strong>请注意：</strong>此查询码只会显示一次，请妥善保存</p>
+            <button class="btn" id="newSubmissionBtn">提交新的申请</button>
+        </div>
+        
+        <div class="query-section">
+            <div class="card">
+                <h2>查询申请状态</h2>
+                <p>输入您的查询码以查看申请状态</p>
+                
+                <div class="form-group">
+                    <label for="queryCode">查询码</label>
+                    <input type="text" id="queryCode" name="queryCode" placeholder="请输入您的查询码">
+                </div>
+                
+                <button class="btn btn-block" id="queryBtn">查询状态</button>
+                
+                <div id="queryResult" style="margin-top: 20px; display: none;">
+                    <hr>
+                    <h3>申请状态</h3>
+                    <div id="statusDisplay"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Panel (hidden by default) -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="card">
+                <h2>管理员控制台</h2>
+                <p>审核用户提交的申请</p>
+                
+                <div class="submissions-list" id="submissionsList">
+                    <!-- Submissions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>管理员登录</h2>
+            <p>请输入管理员密码以继续</p>
+            
+            <div class="form-group">
+                <label for="adminPassword">密码</label>
+                <input type="password" id="adminPassword" name="adminPassword" placeholder="输入管理员密码">
+            </div>
+            
+            <button class="btn btn-block" id="loginBtn">登录</button>
+            <p id="loginError" style="color: var(--danger-color); margin-top: 10px; display: none;">密码错误，请重试</p>
+        </div>
+    </div>
+    
+    <!-- 热键提示 -->
+    <div class="hotkey-hint" id="hotkeyHint">按下 Ctrl+Alt+U 打开管理员登录</div>
+    
+    <script>
+        // 存储申请数据
+        let submissions = JSON.parse(localStorage.getItem('unicsfallSubmissions')) || [];
+        const ADMIN_PASSWORD = "Unicsfall@2023"; // 管理员密码
+        
+        // DOM元素
+        const applicationForm = document.getElementById('applicationForm');
+        const submissionResult = document.getElementById('submissionResult');
+        const submitForm = document.getElementById('submitForm');
+        const generatedCode = document.getElementById('generatedCode');
+        const newSubmissionBtn = document.getElementById('newSubmissionBtn');
+        const queryBtn = document.getElementById('queryBtn');
+        const queryCode = document.getElementById('queryCode');
+        const queryResult = document.getElementById('queryResult');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const adminModal = document.getElementById('adminModal');
+        const closeModal = document.querySelector('.close');
+        const loginBtn = document.getElementById('loginBtn');
+        const adminPassword = document.getElementById('adminPassword');
+        const loginError = document.getElementById('loginError');
+        const adminPanel = document.getElementById('adminPanel');
+        const submissionsList = document.getElementById('submissionsList');
+        const hotkeyHint = document.getElementById('hotkeyHint');
+        
+        // 生成随机查询码
+        function generateQueryCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // 提交表单
+        submitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const author = document.getElementById('author').value;
+            const queryCode = generateQueryCode();
+            const date = new Date().toISOString();
+            
+            const submission = {
+                id: Date.now(),
+                title,
+                content,
+                author,
+                queryCode,
+                date,
+                status: '审核中',
+                statusClass: 'status-pending'
+            };
+            
+            submissions.push(submission);
+            localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+            
+            // 显示查询码
+            applicationForm.style.display = 'none';
+            generatedCode.textContent = queryCode;
+            submissionResult.style.display = 'block';
+            
+            // 重置表单
+            submitForm.reset();
+        });
+        
+        // 新的提交按钮
+        newSubmissionBtn.addEventListener('click', function() {
+            submissionResult.style.display = 'none';
+            applicationForm.style.display = 'block';
+        });
+        
+        // 查询状态
+        queryBtn.addEventListener('click', function() {
+            const code = queryCode.value.trim();
+            if (!code) return;
+            
+            const submission = submissions.find(sub => sub.queryCode === code);
+            
+            if (submission) {
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(submission.status) {
+                    case '审核中':
+                        statusClass = 'status-pending';
+                        break;
+                    case '已通过':
+                        statusClass = 'status-approved';
+                        break;
+                    case '未通过':
+                        statusClass = 'status-rejected';
+                        break;
+                }
+                
+                statusDisplay.innerHTML = `
+                    <div class="submission-item fade-in">
+                        <div class="submission-header">
+                            <div class="submission-title">${submission.title}</div>
+                            <span class="status-badge ${statusClass}">${submission.status}</span>
+                        </div>
+                        <div class="submission-author">提交人: ${submission.author}</div>
+                        <div class="submission-date">提交时间: ${new Date(submission.date).toLocaleString()}</div>
+                        <div class="submission-content">${submission.content}</div>
+                    </div>
+                `;
+                
+                queryResult.style.display = 'block';
+            } else {
+                statusDisplay.innerHTML = '<p style="color: var(--danger-color);">未找到匹配的申请记录</p>';
+                queryResult.style.display = 'block';
+            }
+        });
+        
+        // 管理员登录热键 (Ctrl+Alt+U)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'u') {
+                adminModal.style.display = 'block';
+                
+                // 显示热键提示
+                hotkeyHint.classList.add('show');
+                setTimeout(() => {
+                    hotkeyHint.classList.remove('show');
+                }, 2000);
+            }
+        });
+        
+        closeModal.addEventListener('click', function() {
+            adminModal.style.display = 'none';
+            loginError.style.display = 'none';
+            adminPassword.value = '';
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === adminModal) {
+                adminModal.style.display = 'none';
+                loginError.style.display = 'none';
+                adminPassword.value = '';
+            }
+        });
+        
+        loginBtn.addEventListener('click', function() {
+            if (adminPassword.value === ADMIN_PASSWORD) {
+                adminModal.style.display = 'none';
+                adminPassword.value = '';
+                loginError.style.display = 'none';
+                adminPanel.style.display = 'block';
+                loadSubmissions();
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+        
+        // 加载申请列表
+        function loadSubmissions() {
+            submissionsList.innerHTML = '';
+            
+            if (submissions.length === 0) {
+                submissionsList.innerHTML = '<p>暂无申请记录</p>';
+                return;
+            }
+            
+            // 按日期降序排序
+            const sortedSubmissions = [...submissions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedSubmissions.forEach(sub => {
+                let statusClass = '';
+                switch(sub.status) {
+                    case '审核中':
+                        statusClass = 'status-pending';
+                        break;
+                    case '已通过':
+                        statusClass = 'status-approved';
+                        break;
+                    case '未通过':
+                        statusClass = 'status-rejected';
+                        break;
+                }
+                
+                const submissionElement = document.createElement('div');
+                submissionElement.className = 'submission-item';
+                submissionElement.innerHTML = `
+                    <div class="submission-header">
+                        <div class="submission-title">${sub.title}</div>
+                        <span class="status-badge ${statusClass}">${sub.status}</span>
+                    </div>
+                    <div class="submission-author">提交人: ${sub.author}</div>
+                    <div class="submission-date">提交时间: ${new Date(sub.date).toLocaleString()}</div>
+                    <div class="submission-content">${sub.content}</div>
+                    <div class="submission-actions">
+                        <button class="action-btn approve-btn" data-id="${sub.id}">通过</button>
+                        <button class="action-btn reject-btn" data-id="${sub.id}">拒绝</button>
+                    </div>
+                    <div class="submission-code">查询码: ${sub.queryCode}</div>
+                `;
+                
+                submissionsList.appendChild(submissionElement);
+            });
+            
+            // 添加事件监听器
+            document.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    approveSubmission(id);
+                });
+            });
+            
+            document.querySelectorAll('.reject-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    rejectSubmission(id);
+                });
+            });
+        }
+        
+        // 批准申请
+        function approveSubmission(id) {
+            const index = submissions.findIndex(sub => sub.id === id);
+            if (index !== -1) {
+                submissions[index].status = '已通过';
+                submissions[index].statusClass = 'status-approved';
+                localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+                loadSubmissions();
+            }
+        }
+        
+        // 拒绝申请
+        function rejectSubmission(id) {
+            const index = submissions.findIndex(sub => sub.id === id);
+            if (index !== -1) {
+                submissions[index].status = '未通过';
+                submissions[index].statusClass = 'status-rejected';
+                localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+                loadSubmissions();
+            }
+        }
+        
+        // 实时更新检查
+        function checkForUpdates() {
+            // 这里可以添加从服务器获取更新的逻辑
+            // 目前使用本地存储，所以不需要额外的更新检查
+        }
+        
+        // 每分钟检查一次更新
+        setInterval(checkForUpdates, 60000);
+    </script>
+</body>
+</html>
