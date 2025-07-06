@@ -168,29 +168,6 @@
             display: inline-block;
         }
         
-        /* 移除管理员按钮样式 */
-        /*
-        .admin-link {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-        
-        .admin-btn {
-            background-color: var(--dark-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-        
-        .admin-btn:hover {
-            background-color: #23272b;
-        }
-        */
-        
         /* Modal styles */
         .modal {
             display: none;
@@ -376,37 +353,70 @@
         .hotkey-hint.show {
             opacity: 1;
         }
+        
+        /* 申请资格列表 */
+        .qualification-list {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+        
+        .qualification-list li {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
             <h1>Unicsfall 管理员申请平台</h1>
-            <p class="tagline">提交您的申请，参与社区管理</p>
+            <p class="tagline">申请成为社区管理员，参与平台管理</p>
         </div>
     </header>
     
     <div class="container">
-        <!-- 移除了可见的管理员按钮 -->
-        
         <div class="card" id="applicationForm">
-            <h2>提交申请</h2>
-            <p>请填写以下信息提交您的管理员申请</p>
+            <h2>管理员申请</h2>
+            <p>请填写以下信息申请成为Unicsfall管理员</p>
+            
+            <div class="qualification-list">
+                <h3>申请资格要求：</h3>
+                <ul>
+                    <li>注册时间超过3个月</li>
+                    <li>无违规记录</li>
+                    <li>熟悉社区规则</li>
+                    <li>每天有足够的管理时间</li>
+                </ul>
+            </div>
             
             <form id="submitForm">
                 <div class="form-group">
-                    <label for="title">意见标题</label>
-                    <input type="text" id="title" name="title" required placeholder="请输入申请标题">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" name="username" required placeholder="您的用户名">
                 </div>
                 
                 <div class="form-group">
-                    <label for="content">意见内容</label>
-                    <textarea id="content" name="content" required placeholder="请详细描述您的申请理由和相关经验"></textarea>
+                    <label for="email">电子邮箱</label>
+                    <input type="email" id="email" name="email" required placeholder="您的联系邮箱">
                 </div>
                 
                 <div class="form-group">
-                    <label for="author">意见人</label>
-                    <input type="text" id="author" name="author" required placeholder="您的姓名或昵称">
+                    <label for="experience">管理经验</label>
+                    <textarea id="experience" name="experience" required placeholder="请描述您在其他平台的管理经验（如无可填写'无'）"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reason">申请理由</label>
+                    <textarea id="reason" name="reason" required placeholder="请详细说明您申请成为管理员的理由"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="availability">每日可管理时间</label>
+                    <select id="availability" name="availability" required>
+                        <option value="">请选择</option>
+                        <option value="1-2小时">1-2小时</option>
+                        <option value="2-4小时">2-4小时</option>
+                        <option value="4小时以上">4小时以上</option>
+                    </select>
                 </div>
                 
                 <button type="submit" class="btn btn-block">提交申请</button>
@@ -415,17 +425,17 @@
         
         <div class="card result-card" id="submissionResult">
             <div class="result-icon">✓</div>
-            <h2>提交成功!</h2>
-            <p>您的申请已成功提交，请保存以下查询码以跟踪申请状态</p>
+            <h2>申请提交成功!</h2>
+            <p>您的管理员申请已成功提交，请保存以下查询码以跟踪申请状态</p>
             <div class="query-code" id="generatedCode"></div>
             <p><strong>请注意：</strong>此查询码只会显示一次，请妥善保存</p>
-            <button class="btn" id="newSubmissionBtn">提交新的申请</button>
+            <button class="btn" id="newSubmissionBtn">返回</button>
         </div>
         
         <div class="query-section">
             <div class="card">
                 <h2>查询申请状态</h2>
-                <p>输入您的查询码以查看申请状态</p>
+                <p>输入您的查询码以查看管理员申请状态</p>
                 
                 <div class="form-group">
                     <label for="queryCode">查询码</label>
@@ -445,8 +455,8 @@
         <!-- Admin Panel (hidden by default) -->
         <div class="admin-panel" id="adminPanel">
             <div class="card">
-                <h2>管理员控制台</h2>
-                <p>审核用户提交的申请</p>
+                <h2>管理员审核控制台</h2>
+                <p>审核用户提交的管理员申请</p>
                 
                 <div class="submissions-list" id="submissionsList">
                     <!-- Submissions will be loaded here -->
@@ -477,7 +487,7 @@
     
     <script>
         // 存储申请数据
-        let submissions = JSON.parse(localStorage.getItem('unicsfallSubmissions')) || [];
+        let submissions = JSON.parse(localStorage.getItem('unicsfallAdminApplications')) || [];
         const ADMIN_PASSWORD = "Unicsfall@2023"; // 管理员密码
         
         // DOM元素
@@ -513,17 +523,21 @@
         submitForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
-            const author = document.getElementById('author').value;
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const experience = document.getElementById('experience').value;
+            const reason = document.getElementById('reason').value;
+            const availability = document.getElementById('availability').value;
             const queryCode = generateQueryCode();
             const date = new Date().toISOString();
             
             const submission = {
                 id: Date.now(),
-                title,
-                content,
-                author,
+                username,
+                email,
+                experience,
+                reason,
+                availability,
                 queryCode,
                 date,
                 status: '审核中',
@@ -531,7 +545,7 @@
             };
             
             submissions.push(submission);
-            localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+            localStorage.setItem('unicsfallAdminApplications', JSON.stringify(submissions));
             
             // 显示查询码
             applicationForm.style.display = 'none';
@@ -574,12 +588,16 @@
                 statusDisplay.innerHTML = `
                     <div class="submission-item fade-in">
                         <div class="submission-header">
-                            <div class="submission-title">${submission.title}</div>
+                            <div class="submission-title">管理员申请 - ${submission.username}</div>
                             <span class="status-badge ${statusClass}">${submission.status}</span>
                         </div>
-                        <div class="submission-author">提交人: ${submission.author}</div>
-                        <div class="submission-date">提交时间: ${new Date(submission.date).toLocaleString()}</div>
-                        <div class="submission-content">${submission.content}</div>
+                        <div class="submission-date">申请时间: ${new Date(submission.date).toLocaleString()}</div>
+                        <div class="submission-content">
+                            <p><strong>电子邮箱:</strong> ${submission.email}</p>
+                            <p><strong>管理经验:</strong> ${submission.experience}</p>
+                            <p><strong>申请理由:</strong> ${submission.reason}</p>
+                            <p><strong>每日可管理时间:</strong> ${submission.availability}</p>
+                        </div>
                     </div>
                 `;
                 
@@ -590,9 +608,9 @@
             }
         });
         
-        // 管理员登录热键 (Ctrl+Alt+U)
+        // 管理员登录热键 
         document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'u') {
+            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
                 adminModal.style.display = 'block';
                 
                 // 显示热键提示
@@ -659,12 +677,16 @@
                 submissionElement.className = 'submission-item';
                 submissionElement.innerHTML = `
                     <div class="submission-header">
-                        <div class="submission-title">${sub.title}</div>
+                        <div class="submission-title">${sub.username} 的申请</div>
                         <span class="status-badge ${statusClass}">${sub.status}</span>
                     </div>
-                    <div class="submission-author">提交人: ${sub.author}</div>
-                    <div class="submission-date">提交时间: ${new Date(sub.date).toLocaleString()}</div>
-                    <div class="submission-content">${sub.content}</div>
+                    <div class="submission-date">申请时间: ${new Date(sub.date).toLocaleString()}</div>
+                    <div class="submission-content">
+                        <p><strong>电子邮箱:</strong> ${sub.email}</p>
+                        <p><strong>管理经验:</strong> ${sub.experience}</p>
+                        <p><strong>申请理由:</strong> ${sub.reason}</p>
+                        <p><strong>每日可管理时间:</strong> ${sub.availability}</p>
+                    </div>
                     <div class="submission-actions">
                         <button class="action-btn approve-btn" data-id="${sub.id}">通过</button>
                         <button class="action-btn reject-btn" data-id="${sub.id}">拒绝</button>
@@ -697,7 +719,7 @@
             if (index !== -1) {
                 submissions[index].status = '已通过';
                 submissions[index].statusClass = 'status-approved';
-                localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+                localStorage.setItem('unicsfallAdminApplications', JSON.stringify(submissions));
                 loadSubmissions();
             }
         }
@@ -708,7 +730,7 @@
             if (index !== -1) {
                 submissions[index].status = '未通过';
                 submissions[index].statusClass = 'status-rejected';
-                localStorage.setItem('unicsfallSubmissions', JSON.stringify(submissions));
+                localStorage.setItem('unicsfallAdminApplications', JSON.stringify(submissions));
                 loadSubmissions();
             }
         }
